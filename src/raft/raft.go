@@ -549,7 +549,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 			//}
 
 			// println("logLen = %d, args.PrevLogIndex = %d, rf.log[0].Index = %d!", logLen, args.PrevLogIndex, rf.log[0].Index)
-
+			Debug(dLog, "S%d, logLen = %d, args.PrevLogIndex = %d, rf.log[logLen-1].Index = %d, args.PrevLogIndex-rf.log[0].Index = %d, args.PrevLogTerm = %d, rf.log[0].Index = %d, rf.log[0].Term = %d!", rf.me, logLen, args.PrevLogIndex, rf.log[logLen-1].Index, args.PrevLogIndex-rf.log[0].Index, args.PrevLogTerm, rf.log[0].Index, rf.log[0].Term)
 			if rf.log[logLen-1].Index+1 <= args.PrevLogIndex || (args.PrevLogIndex >= rf.log[0].Index && rf.log[args.PrevLogIndex-rf.log[0].Index].Term != args.PrevLogTerm) {
 				//if rf.lastIncludedIndex < args.LastIncludedIndex || (rf.lastIncludedIndex == args.LastIncludedIndex && rf.lastIncludedTerm != args.LastIncludedTerm) {
 				//	reply.SnapshotNeed = true
@@ -560,6 +560,7 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 				//}
 
 				if args.TermIndexInfo != nil {
+					Debug(dLog, "S%d(Follower) TermIndexInfo is not null!", rf.me)
 					index := 1
 					// flag := false
 					for ; index < len(args.TermIndexInfo); index++ {
@@ -582,6 +583,8 @@ func (rf *Raft) AppendEntries(args *AppendEntriesArgs, reply *AppendEntriesReply
 
 					reply.TermNeedSync = args.TermIndexInfo[index-1][0]
 					reply.Inconsistent = true
+				} else {
+					Debug(dLog, "S%d(Follower) TermIndexInfo is null!", rf.me)
 				}
 
 				if reply.Inconsistent {
@@ -964,7 +967,7 @@ func (rf *Raft) LeaderHandler(needAppend bool) bool {
 	idToTerm := make(map[int]int)
 	for index := 0; index < len(rf.peers); index++ {
 		if index != rf.me {
-			if logLen != 0 && nextIndex[index]-1-rf.log[0].Index > 0 && nextIndex[index]-1-rf.log[0].Index < len(rf.log) {
+			if logLen != 0 && nextIndex[index]-1-rf.log[0].Index >= 0 && nextIndex[index]-1-rf.log[0].Index < len(rf.log) {
 				idToTerm[index] = rf.log[nextIndex[index]-1-rf.log[0].Index].Term
 			} else {
 				idToTerm[index] = -1
